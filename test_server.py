@@ -45,43 +45,71 @@ def main():
         tools = list_res.get("result", {}).get("tools", [])
         assert len(tools) == 2
         
-        secret_payload = "Token: ghp_1234567890abcdef1234567890abcdef12345678\nEntropy: 8f9b90c2a7147e651e038848d5f306634b22c710"
-        call_req_1 = {
+        # 3. tools/call - scan_secrets (Safe Scenario)
+        safe_secret_payload = "This is a normal public configuration file. No secrets here."
+        safe_sec_req = {
             "jsonrpc": "2.0",
             "id": 3,
             "method": "tools/call",
             "params": {
                 "name": "scan_secrets",
-                "arguments": {
-                    "text": secret_payload
-                }
+                "arguments": {"text": safe_secret_payload}
             }
         }
-        call_res_1 = send_request(proc, call_req_1)
-        assert call_res_1.get("id") == 3
-        findings_json_1 = call_res_1.get("result", {}).get("content", [])[0].get("text")
-        findings_1 = json.loads(findings_json_1)
-        assert len(findings_1) >= 2, f"Expected >= 2 secret findings, got: {findings_1}"
-        
-        sink_payload = "import subprocess\nuser_input = 'malicious_shell_command'\neval(user_input)\nsubprocess.Popen('ls', shell=True)"
-        call_req_2 = {
+        safe_sec_res = send_request(proc, safe_sec_req)
+        assert safe_sec_res.get("id") == 3
+        safe_sec_findings = json.loads(safe_sec_res.get("result", {}).get("content", [])[0].get("text"))
+        assert len(safe_sec_findings) == 0, f"Expected 0 findings, got: {safe_sec_findings}"
+
+        # 4. tools/call - scan_secrets (Unsafe Scenario)
+        unsafe_secret_payload = "Token: ghp_1234567890abcdef1234567890abcdef12345678\nEntropy: 8f9b90c2a7147e651e038848d5f306634b22c710"
+        unsafe_sec_req = {
             "jsonrpc": "2.0",
             "id": 4,
             "method": "tools/call",
             "params": {
-                "name": "check_code_sinks",
-                "arguments": {
-                    "code": sink_payload
-                }
+                "name": "scan_secrets",
+                "arguments": {"text": unsafe_secret_payload}
             }
         }
-        call_res_2 = send_request(proc, call_req_2)
-        assert call_res_2.get("id") == 4
-        findings_json_2 = call_res_2.get("result", {}).get("content", [])[0].get("text")
-        findings_2 = json.loads(findings_json_2)
-        assert len(findings_2) == 2, f"Expected 2 sink findings, got: {findings_2}"
-        assert findings_2[0]["risk"] == "High"
-        assert findings_2[1]["risk"] == "Critical"
+        unsafe_sec_res = send_request(proc, unsafe_sec_req)
+        assert unsafe_sec_res.get("id") == 4
+        unsafe_sec_findings = json.loads(unsafe_sec_res.get("result", {}).get("content", [])[0].get("text"))
+        assert len(unsafe_sec_findings) >= 2, f"Expected >= 2 findings, got: {unsafe_sec_findings}"
+        
+        # 5. tools/call - check_code_sinks (Safe Scenario)
+        safe_code_payload = "def calculate_sum(a, b):\n    return a + b\nprint(calculate_sum(5, 10))"
+        safe_code_req = {
+            "jsonrpc": "2.0",
+            "id": 5,
+            "method": "tools/call",
+            "params": {
+                "name": "check_code_sinks",
+                "arguments": {"code": safe_code_payload}
+            }
+        }
+        safe_code_res = send_request(proc, safe_code_req)
+        assert safe_code_res.get("id") == 5
+        safe_code_findings = json.loads(safe_code_res.get("result", {}).get("content", [])[0].get("text"))
+        assert len(safe_code_findings) == 0, f"Expected 0 sink findings, got: {safe_code_findings}"
+
+        # 6. tools/call - check_code_sinks (Unsafe Scenario)
+        unsafe_code_payload = "import subprocess\nuser_input = 'malicious_shell_command'\neval(user_input)\nsubprocess.Popen('ls', shell=True)"
+        unsafe_code_req = {
+            "jsonrpc": "2.0",
+            "id": 6,
+            "method": "tools/call",
+            "params": {
+                "name": "check_code_sinks",
+                "arguments": {"code": unsafe_code_payload}
+            }
+        }
+        unsafe_code_res = send_request(proc, unsafe_code_req)
+        assert unsafe_code_res.get("id") == 6
+        unsafe_code_findings = json.loads(unsafe_code_res.get("result", {}).get("content", [])[0].get("text"))
+        assert len(unsafe_code_findings) == 2, f"Expected 2 sink findings, got: {unsafe_code_findings}"
+        assert unsafe_code_findings[0]["risk"] == "High"
+        assert unsafe_code_findings[1]["risk"] == "Critical"
         
         print("All tests passed successfully.")
         sys.exit(0)
