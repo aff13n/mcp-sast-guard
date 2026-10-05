@@ -1,4 +1,4 @@
-# MCP SAST Guard
+# mcp-sast-guard
 
 MCP SAST Guard (`mcp-sast-guard`) is a Model Context Protocol (MCP) server designed to provide integrated Static Application Security Testing (SAST) capabilities. It exposes security analysis tools that language models and MCP clients can leverage to detect exposed secrets and dangerous code execution sinks in real-time.
 
