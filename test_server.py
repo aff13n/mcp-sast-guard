@@ -58,6 +58,7 @@ def main():
         }
         safe_sec_res = send_request(proc, safe_sec_req)
         assert safe_sec_res.get("id") == 3
+        assert safe_sec_res.get("result", {}).get("isError", False) is False
         safe_sec_findings = json.loads(safe_sec_res.get("result", {}).get("content", [])[0].get("text"))
         assert len(safe_sec_findings) == 0, f"Expected 0 findings, got: {safe_sec_findings}"
 
@@ -74,6 +75,7 @@ def main():
         }
         unsafe_sec_res = send_request(proc, unsafe_sec_req)
         assert unsafe_sec_res.get("id") == 4
+        assert unsafe_sec_res.get("result", {}).get("isError", False) is True
         unsafe_sec_findings = json.loads(unsafe_sec_res.get("result", {}).get("content", [])[0].get("text"))
         assert len(unsafe_sec_findings) >= 2, f"Expected >= 2 findings, got: {unsafe_sec_findings}"
         
@@ -90,6 +92,7 @@ def main():
         }
         safe_code_res = send_request(proc, safe_code_req)
         assert safe_code_res.get("id") == 5
+        assert safe_code_res.get("result", {}).get("isError", False) is False
         safe_code_findings = json.loads(safe_code_res.get("result", {}).get("content", [])[0].get("text"))
         assert len(safe_code_findings) == 0, f"Expected 0 sink findings, got: {safe_code_findings}"
 
@@ -106,6 +109,7 @@ def main():
         }
         unsafe_code_res = send_request(proc, unsafe_code_req)
         assert unsafe_code_res.get("id") == 6
+        assert unsafe_code_res.get("result", {}).get("isError", False) is True
         unsafe_code_findings = json.loads(unsafe_code_res.get("result", {}).get("content", [])[0].get("text"))
         assert len(unsafe_code_findings) == 2, f"Expected 2 sink findings, got: {unsafe_code_findings}"
         assert unsafe_code_findings[0]["risk"] == "High"

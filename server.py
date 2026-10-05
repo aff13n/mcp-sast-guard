@@ -1,8 +1,15 @@
 import sys
 import json
+import logging
 import traceback
 from detectors.secrets import scan_secrets
 from detectors.sinks import check_code_sinks
+
+logging.basicConfig(
+    filename='sast_guard.log',
+    level=logging.WARNING,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 def send_response(response: dict):
     print(json.dumps(response), flush=True)
@@ -69,13 +76,20 @@ def handle_message(message: dict):
         args = params.get("arguments", {})
         
         try:
+            is_blocked = False
             if tool_name == "scan_secrets":
                 text = args.get("text", "")
                 findings = scan_secrets(text)
+                if findings:
+                    logging.warning(f"Blocked unsafe text payload. Secrets found: {json.dumps(findings)}")
+                    is_blocked = True
                 result_content = json.dumps(findings)
             elif tool_name == "check_code_sinks":
                 code = args.get("code", "")
                 findings = check_code_sinks(code)
+                if findings:
+                    logging.warning(f"Blocked unsafe code payload. Sinks found: {json.dumps(findings)}")
+                    is_blocked = True
                 result_content = json.dumps(findings)
             else:
                 send_response({
@@ -92,6 +106,7 @@ def handle_message(message: dict):
                 "jsonrpc": "2.0",
                 "id": msg_id,
                 "result": {
+                    "isError": is_blocked,
                     "content": [
                         {
                             "type": "text",
