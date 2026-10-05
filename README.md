@@ -65,7 +65,14 @@ MCP servers operate over standard input and output streams. To integrate `mcp-sa
 
 ## Testing
 
-An automated integration suite is provided to validate the JSON-RPC interface and ensure detector reliability against known vulnerable payloads.
+An automated integration suite is provided to validate the JSON-RPC interface and ensure detector reliability. It systematically evaluates both **safe (clean)** and **unsafe (vulnerable)** payloads across all capabilities to guarantee accurate detections and minimize false positives.
+
+### Test Scenarios
+
+- **`scan_secrets` (Safe)**: Evaluates a standard configuration text without secrets. Asserts `0` detections.
+- **`scan_secrets` (Unsafe)**: Injects an explicit mock GitHub token and a high-entropy hex string. Asserts positive identification of both anomalies.
+- **`check_code_sinks` (Safe)**: Evaluates a benign mathematical Python function. Asserts `0` identified sinks.
+- **`check_code_sinks` (Unsafe)**: Evaluates an exploit payload leveraging `eval(user_input)` and `subprocess.Popen(..., shell=True)`. Asserts accurate `High` and `Critical` risk classifications.
 
 Execute the test client:
 
@@ -73,7 +80,7 @@ Execute the test client:
 python3 test_server.py
 ```
 
-If successful, the script terminates with exit code `0` and outputs:
+If successful, the script asserts proper functionality across all scenarios and terminates with exit code `0`, outputting:
 ```text
 All tests passed successfully.
 ```
