@@ -40,6 +40,13 @@ Parses and evaluates Python source code against a matrix of dangerous execution 
 - **Input Schema:** `{"type": "object", "properties": {"code": {"type": "string", "description": "Python code to analyze"}}}`
 - **Output:** JSON array containing vulnerability findings (`line`, `risk`, `description`).
 
+## Active Enforcement & Logging
+
+`mcp-sast-guard` actively blocks MCP clients from executing tools on vulnerable payloads.
+
+1. **Local Logging**: Upon detecting any violations (secrets or dangerous sinks), an incident report is immediately written to `sast_guard.log`.
+2. **Protocol Blocking**: The server intercepts the standard response and sets `isError: True` in the JSON-RPC reply. This effectively blocks downstream execution, forcing the calling MCP client to recognize the payload as an explicit security failure.
+
 ## Installation
 
 No `pip` installation or virtual environment is required. Requires Python 3.8+.
